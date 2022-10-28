@@ -7,5 +7,5 @@ setup(name         = 'dlePy',
       author       = 'Duy Le',
       author_email = 'duy.le@ucf.edu',
       license      = 'GNU General Public License v3.0',
-      packages     = ['dlePy'],
+      package_dir  = {"": "src"},
       zip_safe     = False)

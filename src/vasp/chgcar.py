@@ -30,69 +30,19 @@ def read_chgcar(INDATA, CONTCAR='CONTCAR'):
     print ( 'Read ',INDATA )
     print ( datetime.datetime.now( ) )
 
+    """
+       VASP outputs :
+           \rho(r)*V = \rho(r) * \Delta{V} * N_{grids}
+       The sum of CHGCAR = #(electron) * N_{grids}
+       ASE will divide the raw data in CHGCAR by the cell volume (in Angs^3)
+       Thus, the returned rho has a unit of #(eletron) / Angs^3
+    """
     rho = VaspChargeDensity( INDATA )
+    atoms = read(INDATA)
 
     print ( datetime.datetime.now( ) )
 
-    return rho
-
-def read_chgcar2(INDATA, CONTCAR='CONTCAR'):
-
-    #Read CONTCAR to define the system.
-
-    rho = LocalVaspChargeDensity( )
-
-    system = read( CONTCAR )
-
-    rho.atoms.append( system ) 
-
-    #We don't need this, thus we need to count how many lines
-    #we need to ignore
-    nline = 9
-    startline = nline + system.get_number_of_atoms( )
-
-    #Open file 
-    file=open( INDATA, 'r' )
-
-    #Read all ignored lines
-    for i in range( startline ):
-        dump = file.readline( )
-
-    #Read the dimensions of the array
-    ngr = file.readline( ).split( )
-    #Make it becomes integers 
-    ng = ( int( ngr[ 0 ] ), int( ngr[ 1 ] ), int( ngr[ 2 ] ) )
-
-    print ( 'Read total charge' )
-
-    total = np.empty( ng[ 0 ] * ng[ 1 ] * ng[ 2 ] )
-    total = np.fromfile( file, count = ng[ 0 ] * ng[ 1 ] * ng[ 2 ], sep=' ')
-    total = total.reshape( ng[ 2 ], ng[ 1 ], ng[ 0 ] ).T
-    
-    rho.chg.append( total )
-    del ( total )
-
-    # Find out if there is second blog of data
-    chgdiff_block = False
-    for i in range(10000):
-        dump = file.readline( )
-        ngr_ = dump.split( )
-        if ngr[ 0 ] == ngr_[ 0 ]:
-           chgdiff_block = True
-           break
-
-    if chgdiff_block:
-        print ( 'Read CHGDIFF BLOCK' )
-
-        chgdiff = np.empty(ng[0]*ng[1]*ng[2])
-        chgdiff = np.fromfile(file, count = ng[0]*ng[1]*ng[2], sep=' ')
-        print ( chgdiff.shape )
-        print ( chgdiff[ -3:-1 ] )
-        chgdiff = chgdiff.reshape( ng[2], ng[1], ng[0]).T 
-        rho.chgdiff.append( chgdiff )
-        del ( chgdiff )
-
-    return rho
+    return rho, atoms
 
 def write_chgcar( fobj, atoms, data = None):
 
@@ -234,42 +184,41 @@ def write_vtk( fobj, atoms, data = None):
         fobj = open( fobj, 'w' )
         
     shape = np.array( data.shape )    
+    grids = np.prod(shape)
     
     fobj.write('# vtk DataFile Version 3.0 \n')
     fobj.write('vtk output \n')
     fobj.write('ASCII \n')
     fobj.write('DATASET STRUCTURED_GRID \n')
     fobj.write('DIMENSIONS  %5i %5i %5i \n' % ( shape[0], shape[1], shape[2]))
-    #fobj.write('SPACING 1 1 1 \n')
-    #fobj.write('ORIGIN 0 0 0 \n')
-    fobj.write('POINTS %10i float \n' %( shape[0]*shape[1]*shape[2]))
+    fobj.write('POINTS %10i float \n' %( grids ))
+
     """ Write coordinate of points """
     ix,iy,iz = np.mgrid [0:shape[0], 0:shape[1], 0:shape[2]]
     
-    x = ix / float (shape[0]) * atoms.cell[0,0] + \
-        iy / float (shape[1]) * atoms.cell[1,0] + \
-        iz / float (shape[2]) * atoms.cell[2,0] 
-    y = ix / float (shape[0]) * atoms.cell[0,1] + \
-        iy / float (shape[1]) * atoms.cell[1,1] + \
-        iz / float (shape[2]) * atoms.cell[2,1] 
-    z = ix / float (shape[0]) * atoms.cell[0,2] + \
-        iy / float (shape[1]) * atoms.cell[1,2] + \
-        iz / float (shape[2]) * atoms.cell[2,2] 
+    x = ix / shape[0] * atoms.cell[0,0] + \
+        iy / shape[1] * atoms.cell[1,0] + \
+        iz / shape[2] * atoms.cell[2,0] 
+    y = ix / shape[0] * atoms.cell[0,1] + \
+        iy / shape[1] * atoms.cell[1,1] + \
+        iz / shape[2] * atoms.cell[2,1] 
+    z = ix / shape[0] * atoms.cell[0,2] + \
+        iy / shape[1] * atoms.cell[1,2] + \
+        iz / shape[2] * atoms.cell[2,2] 
     x = x.ravel()    
     y = y.ravel()    
     z = z.ravel()    
+
     #print  len (x), len(y), len(z), shape[0]*shape[1]*shape[2]
     for i in range ( len ( x ) ):
-         fobji.write( "{} {} {}\n".fotmat( x[i],y[i],z[i] ) )
-    fobj.write('POINT_DATA %10i \n' %( shape[0]*shape[1]*shape[2]))     
+         fobj.write(' %17.10E %17.10E %17.10E\n' % (x[i], y[i], z[i]))
+    fobj.write('POINT_DATA %10i \n' %( grids ))     
     fobj.write('SCALARS Density double \n')
     fobj.write('LOOKUP_TABLE default \n')
  
-    volume = atoms.get_volume()
     if data is None:
-        data = np.ones( ( 2, 2, 2 ) )
+        data = np.ones( ( 1, 1, 1 ) )
     
-    #CHGCAR format uses DATA*volume
     data = np.asarray( data ) 
 
     if data.dtype == complex:
@@ -280,19 +229,13 @@ def write_vtk( fobj, atoms, data = None):
     chgtmp = data.T.ravel()
     # Must be a tuple to pass to string conversion
     chgtmp = tuple(chgtmp)
-    # Other formats - 5 columns
-    # Write all but the last row
-    for ii in range( ( len( chgtmp ) - 1 ) / 5 ):
-         fobj.write(' %17.10E %17.10E %17.10E %17.10E %17.10E\n' % chgtmp[ ii*5: (ii+1) * 5])
-    # If the last row contains 5 values then write them without a newline
-    if len( chgtmp ) % 5 == 0:
-         fobj.write(' %17.10E %17.10E %17.10E %17.10E %17.10E' % chgtmp[ len( chgtmp ) - 5 : len( chgtmp ) ] )
-    # Otherwise write fewer columns without a newline
-    else:
-         for ii in range( len( chgtmp ) % 5 ):
-              fobj.write((' %17.10E') % chgtmp[ len( chgtmp ) - len( chgtmp ) % 5 + ii ] )
-    # Write a newline whatever format it is
-    fobj.write('\n')
+
+    for ii in range(len( chgtmp )):
+         fobj.write(' %17.10E\n' % chgtmp[ii])
+
+    volume = atoms.get_volume()
+    print("Total electrons: {} \n".format(np.sum(data)*volume/grids))
+
     # Clean up
     del chgtmp
 

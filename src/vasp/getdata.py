@@ -1,6 +1,6 @@
 import numpy as np
 import gzip as gz
-from ..math import str2bool
+from .._math import str2bool
 from ..small_tools import str_decode
 
 def read_outcar( outcar ):

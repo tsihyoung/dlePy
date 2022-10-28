@@ -189,7 +189,7 @@ def tersoff_hamann(CONTCAR,INDATA,OUTPRE,TOP,LDOS_IN,ref):
 
             t2 = datetime.now()
             fileout.close()
-            print 'CPU '+str(rank)+' TIME '+str(t2-t1)
+            print('CPU '+str(rank)+' TIME '+str(t2-t1))
             comm.Barrier()
             # Broadscating data
             print_mpi(rank, 'Broadscating data...',endline=False)

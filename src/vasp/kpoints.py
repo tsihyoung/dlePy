@@ -1,7 +1,7 @@
 from ase import *
 from ase.io import *
 import numpy as np
-from ..math import length
+from .._math import length
 
 def rec2cart( recs, b ):
     '''

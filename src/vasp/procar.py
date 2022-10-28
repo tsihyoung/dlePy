@@ -28,7 +28,7 @@ def get_band_atom(ATOM,NATOMS,NKPTS,NBANDS,PROCAR,NKPTS0,NSPIN,hse=False,nskip=0
         #print file_exists, txt
         f = gz.open( PROCAR )
         if not file_exists:
-            print 'STOP'    
+            print('STOP')
             exit(txt)
    else:
       f = open( PROCAR )
@@ -70,7 +70,7 @@ def get_band_atom(ATOM,NATOMS,NKPTS,NBANDS,PROCAR,NKPTS0,NSPIN,hse=False,nskip=0
 #          print kline
           #line= linecache.getline(PROCAR,kline)
           line= lines[ kline ]
-          print line
+          print(line)
           lenline=len(line.split())
           weight=float(line.split()[lenline-1])
           for iband in range(1,NBANDS+1):
@@ -127,7 +127,7 @@ def get_band(ATLIST,NATOMS,NKPTS,NBANDS,c,FILENAME,efermi,SPIN,REF,THRESHOLD,hse
     # Read a template
     file_exists, txt = file_exist('ATOM.'+str(SPIN)+'.'+subfix)
     if not file_exists:
-        print 'STOP'
+        print('STOP')
         exit(txt)
 
     f1=loadtxt('ATOM.'+str(SPIN)+'.'+subfix)
@@ -148,25 +148,25 @@ def get_band(ATLIST,NATOMS,NKPTS,NBANDS,c,FILENAME,efermi,SPIN,REF,THRESHOLD,hse
 
        file_exists, txt = file_exist('ATOM.'+str(SPIN)+'.'+subfix)
        if not file_exists:
-           print 'STOP'
+           print('STOP')
            exit(txt)
 
-       print 'ATOM.'+str(SPIN)+'.'+subfix 
+       print('ATOM.'+str(SPIN)+'.'+subfix)
        f1=loadtxt('ATOM.'+str(SPIN)+'.'+subfix) 
        dostmp=f1[:,c+2]
        dos+=dostmp
     file=open(FILENAME,'w')
-    print 'The columns in ',FILENAME,' are:'
+    print('The columns in ',FILENAME,' are:')
     if ( REF == 'NA' ):
-       print '%10s %10s %7s %6s %7s' %('k#/NPTS','e-ef','pdos','band#','weigh')
+       print('%10s %10s %7s %6s %7s' %('k#/NPTS','e-ef','pdos','band#','weigh'))
     if ( REF != 'NA' ): 
-       print '%10s %10s %7s %14s %6s %7s' %('k#/NPTS','e-ef','pdos','pdos/pdosref','band#','weigh')
+       print('%10s %10s %7s %14s %6s %7s' %('k#/NPTS','e-ef','pdos','pdos/pdosref','band#','weigh'))
  
     if ( REF != 'NA' ):
 
        file_exists, txt = file_exist(REF)
        if not file_exists:
-            print 'STOP'
+            print('STOP')
             exit(txt)
 
        reff=loadtxt(REF)
@@ -207,32 +207,32 @@ def split_bands(NPROCAR,NSPIN,hse=False,nskip=0,LSORBIT=False):
 
        file_exists, txt = file_exist('ATOM.0.'+subfix)
        if file_exists:
-           print 'STOP'
+           print('STOP')
            exit('File ATOM.0.'+subfix+' is already exist. You should delete all ATOM.X.XXX files before continue.')
        file_exists, txt = file_exist('ATOM.1.'+subfix)
        if file_exists:
-           print 'STOP'
+           print('STOP')
            exit('File ATOM.1.'+subfix+' is already exist. You should delete all ATOM.X.XXX files before continue.')
 
        file_exists, txt = file_exist('TOTAL')
        if file_exists:
-           print 'STOP'
+           print('STOP')
            exit('File TOTAL is already exist. You should delete TOTAL file before continue.')
 
-    print 'The columns in ATOM.X.XXX files are:'
-    print '%5s %6s %10s %7s %7s %7s %7s %7s %7s %7s %7s %7s %7s %7s' %('k#','band#','e','s','py','pz','px','dxy','dyz','dz2','dxz','dx2','tot','w')
+    print('The columns in ATOM.X.XXX files are:')
+    print('%5s %6s %10s %7s %7s %7s %7s %7s %7s %7s %7s %7s %7s %7s' %('k#','band#','e','s','py','pz','px','dxy','dyz','dz2','dxz','dx2','tot','w'))
 
     NKPTS0=0
     for pro in range(NPROCAR):
         PROCAR='PROCAR.'+str(pro)
-        print 'Parsing file ',PROCAR
+        print('Parsing file ',PROCAR)
         file_exists, txt = file_exist(PROCAR)
         if not file_exists:
             PROCAR='PROCAR.'+str(pro)+'.gz'
             file_exists, txt = file_exist(PROCAR)
             #print file_exists, txt
             if not file_exists:
-                print 'STOP'     
+                print('STOP')
                 exit(txt)
             else:
                 f = gz.open( PROCAR )
@@ -252,10 +252,10 @@ def split_bands(NPROCAR,NSPIN,hse=False,nskip=0,LSORBIT=False):
 #        NBANDS=int(line.split()[7])
         NBANDS=get_NBANDS()
     
-        print NATOMS, NKPTS, NBANDS,NSPIN
+        print(NATOMS, NKPTS, NBANDS,NSPIN)
     
         for ATOM in range(1,NATOMS+2):
-            print 'COLLECTING DATA FOR ATOM ', ATOM
+            print('COLLECTING DATA FOR ATOM ', ATOM)
             get_band_atom(ATOM,NATOMS,NKPTS,NBANDS,PROCAR,NKPTS0,NSPIN,hse=hse,nskip=nskip,LSORBIT=LSORBIT)
         NKPTS0+=NKPTS-nskip
         #linecache.clearcache()
@@ -275,14 +275,14 @@ def get_number_of_kpoints(NPROCAR,hse=False, nskip=0):
     os.system('rm -f .tmp')
     for pro in range(NPROCAR):
         PROCAR='PROCAR.'+str(pro)
-        print PROCAR
+        print(PROCAR)
         file_exists, txt = file_exist(PROCAR)
         if not file_exists:
             PROCAR='PROCAR.'+str(pro)+'.gz'
             file_exists, txt = file_exist(PROCAR)
             #print file_exists, txt
             if not file_exists:
-                print 'STOP'    
+                print('STOP')
                 exit(txt)
             else:
                 f = gz.open( PROCAR )
@@ -316,7 +316,7 @@ def get_NATOMS():
         #print file_exists, txt
         f = gz.open( PROCAR, 'r' )
         if not file_exists:
-            print 'STOP'    
+            print('STOP')
             exit(txt)
     else:
         f = open( PROCAR, 'r' )
@@ -346,7 +346,7 @@ def get_NBANDS():
         file_exists, txt = file_exist(PROCAR)
         #print file_exists, txt
         if not file_exists:
-            print 'STOP'    
+            print('STOP')
             exit(txt)
         else:
             f = gz.open( PROCAR )
@@ -390,14 +390,14 @@ def get_bands_structure(NPROCAR,NSPIN,DATA,LSORBIT=False,hse=False, nskip=0):
     NKPTS0=0 
     for pro in range(NPROCAR):
         PROCAR='PROCAR.'+str(pro)
-        print 'Parsing file ',PROCAR
+        print('Parsing file ',PROCAR)
         file_exists, txt = file_exist(PROCAR)
         if not file_exists:
             PROCAR='PROCAR.'+str(pro)+'.gz'
             file_exists, txt = file_exist(PROCAR)
             #print file_exists, txt
             if not file_exists:
-                print 'STOP'    
+                print('STOP')
                 exit(txt)
 
 
@@ -406,7 +406,7 @@ def get_bands_structure(NPROCAR,NSPIN,DATA,LSORBIT=False,hse=False, nskip=0):
         NKPTS=int(line.split()[3])
         NBANDS=get_NBANDS()
 
-        print NATOMS, NKPTS, NBANDS,NSPIN
+        print(NATOMS, NKPTS, NBANDS,NSPIN)
 
         os.system('grep "band " '+PROCAR+' | awk \'{print $2,$5}\'  > .DATA')
         f=loadtxt('.DATA')

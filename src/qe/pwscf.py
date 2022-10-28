@@ -397,7 +397,7 @@ def write_pwscf_input ( object , filename, verify_pot = False, recenter = False,
     for item in vars( dict ):
         f.write( write_key ( item , dict ) + '\n' )
 
-    if object.system.spin_pol.nspin is 2:
+    if object.system.spin_pol.nspin == 2:
         f.write( '\n' )
         f.write( '! .system.spin_pol\n' )
         dict = object.system.spin_pol
