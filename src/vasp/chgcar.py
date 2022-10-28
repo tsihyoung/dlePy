@@ -16,13 +16,6 @@ from ase.units import Bohr
 from ase.io import read, write
 from ase.calculators.vasp import VaspChargeDensity
 
-class LocalVaspChargeDensity:
-    def __init__( self ):
-        self.atoms = []
-        self.chg = []
-        self.chgdiff = []
-
-
 def read_chgcar(INDATA, CONTCAR='CONTCAR'):
 
     print ( 'Input data: ',INDATA )
@@ -177,7 +170,7 @@ def reduce_spin_chgcar(INDATA, factor,CONTCAR='CONTCAR'):
     del ( spin_ )
 
 
-def write_vtk( fobj, atoms, data = None):
+def write_vtk( fobj, atoms, data, sp_x = 1, sp_y = 1, sp_z = 1 ):
     del atoms.constraints 
     
     if isinstance( fobj, str ):
@@ -185,12 +178,20 @@ def write_vtk( fobj, atoms, data = None):
         
     shape = np.array( data.shape )    
     grids = np.prod(shape)
-    
-    fobj.write('# vtk DataFile Version 3.0 \n')
-    fobj.write('vtk output \n')
-    fobj.write('ASCII \n')
-    fobj.write('DATASET STRUCTURED_GRID \n')
-    fobj.write('DIMENSIONS  %5i %5i %5i \n' % ( shape[0], shape[1], shape[2]))
+
+    volume = atoms.get_volume()
+    print("Total electrons: {} \n".format(np.sum(data)*volume/grids))
+
+    shape = np.array(np.ceil(shape/[sp_x,sp_y,sp_z]), np.int)
+    grids = np.prod(shape)
+
+    fobj.write('# vtk DataFile Version 3.0\n')
+    fobj.write('vtk output\n')
+    fobj.write('ASCII\n')
+    fobj.write('DATASET STRUCTURED_GRID\n')
+    # DIMENSIONS should be nz ny nx
+    # VTK official manual is INCORRECT
+    fobj.write('DIMENSIONS  %5i %5i %5i \n' % ( shape[2], shape[1], shape[0]))
     fobj.write('POINTS %10i float \n' %( grids ))
 
     """ Write coordinate of points """
@@ -205,36 +206,27 @@ def write_vtk( fobj, atoms, data = None):
     z = ix / shape[0] * atoms.cell[0,2] + \
         iy / shape[1] * atoms.cell[1,2] + \
         iz / shape[2] * atoms.cell[2,2] 
-    x = x.ravel()    
-    y = y.ravel()    
-    z = z.ravel()    
+    x = x.ravel()
+    y = y.ravel()
+    z = z.ravel()
 
     #print  len (x), len(y), len(z), shape[0]*shape[1]*shape[2]
     for i in range ( len ( x ) ):
-         fobj.write(' %17.10E %17.10E %17.10E\n' % (x[i], y[i], z[i]))
-    fobj.write('POINT_DATA %10i \n' %( grids ))     
-    fobj.write('SCALARS Density double \n')
-    fobj.write('LOOKUP_TABLE default \n')
+         fobj.write(' %15.5f %15.5f %15.5f\n' % (x[i], y[i], z[i]))
+    fobj.write('POINT_DATA %10i\n' %( grids ))     
+    fobj.write('SCALARS Density double\n')
+    fobj.write('LOOKUP_TABLE default\n')
  
-    if data is None:
-        data = np.ones( ( 1, 1, 1 ) )
-    
     data = np.asarray( data ) 
+    data = data[::sp_x,::sp_y,::sp_z]
 
-    if data.dtype == complex:
-        data = np.abs( data )
-
-
-    # Make a 1D copy of chg, must take transpose to get ordering right
-    chgtmp = data.T.ravel()
+    # Make a 1D copy of chg
+    chgtmp = data.ravel()
     # Must be a tuple to pass to string conversion
     chgtmp = tuple(chgtmp)
 
     for ii in range(len( chgtmp )):
          fobj.write(' %17.10E\n' % chgtmp[ii])
-
-    volume = atoms.get_volume()
-    print("Total electrons: {} \n".format(np.sum(data)*volume/grids))
 
     # Clean up
     del chgtmp
